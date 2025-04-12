@@ -1,7 +1,6 @@
 import argparse
 import uvicorn
 import asyncio
-import os
 
 
 from models import Robot, ConnectionManager
@@ -41,6 +40,7 @@ def create_app(args) -> FastAPI:
 
     return app
 
+
 async def periodic_state_update(rate: int):
     while True:
         robot.mock_tick()
@@ -50,13 +50,14 @@ async def periodic_state_update(rate: int):
             pass
         await asyncio.sleep(1 / rate)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--host",
         type=str,
         default="localhost",
-        help="Set server's host. Defaults to localhost.",
+        help="Sets server's host. Defaults to localhost.",
     )
     parser.add_argument(
         "--port", type=int, default=5487, help="Sets server's port. Defaults to 5487."
@@ -76,7 +77,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    
     app = create_app(args)
 
     uvicorn.run(

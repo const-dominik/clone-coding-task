@@ -1,0 +1,21 @@
+services:
+  backend:
+    build: ./back
+    container_name: fastapi-backend
+    environment:
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${PORT:-5487}
+      RATE: ${RATE:-10}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${PORT:-5487}:${PORT:-5487}"
+
+  frontend:
+    build: ./front
+    container_name: vite-frontend
+    environment:
+      PORT: 5173
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
