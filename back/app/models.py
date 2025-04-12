@@ -42,7 +42,7 @@ class Robot:
         self.fan_mode = FanMode.PROPORTIONAL
         self.fan_speed = 0
         self.power_consumption = decimal.Decimal(0)
-        self.started_at = datetime.datetime.now(datetime.timezone.utc)
+        self.started_at = datetime.datetime.now(datetime.timezone.utc).timestamp()
         self.logs = []
 
         self.status = Status.RUNNING
@@ -67,9 +67,13 @@ class Robot:
         modifier = (100 - self.fan_speed) / 100
         temp = (max_temperature - min_temperature) * modifier + min_temperature
 
+        fluctuation = random.uniform(-0.5, 0.5)
+        if temp + fluctuation >= min_temperature and temp + fluctuation <= max_temperature:
+            temp += fluctuation
+
         self.temperature = decimal.Decimal(temp).quantize(decimal.Decimal("0.01"))
         if self.temperature > 0.9 * max_temperature:
-            logger.warning(f"Temperature is getting too high: {temp}\N{DEGREE SIGN}C.")
+            logger.warning(f"Temperature is getting too high: {self.temperature}\N{DEGREE SIGN}C.")
 
         self.logs = log_stream.getvalue().split("\n")[0:-1]
 
@@ -80,43 +84,40 @@ class Robot:
         elif self.status == Status.RUNNING:
             self.status = Status.IDLE
             logger.info("Switched status to idle.")
-        self.mock_tick()
 
     def reset(self):
         if self.status in [Status.IDLE, Status.ERROR]:
             self.status = Status.IDLE
-            self.started_at = datetime.datetime.now(datetime.timezone.utc)
+            self.started_at = datetime.datetime.now(datetime.timezone.utc).timestamp()
 
             log_stream.truncate(0)
             log_stream.seek(0)
 
-            logger.info("Reset the robot.")
-        self.mock_tick()
+            logger.info("Robot reset.")
 
     def switch_fan_mode(self):
         if self.fan_mode == FanMode.PROPORTIONAL:
             self.fan_mode = FanMode.STATIC
             logger.info("Fan mode changed to static.")
-        if self.fan_mode == FanMode.STATIC:
+        elif self.fan_mode == FanMode.STATIC:
             self.fan_mode = FanMode.PROPORTIONAL
             logger.info("Fan mode changed to proportional.")
-        self.mock_tick()
 
     def set_fan_speed(self, speed: int):
         if self.fan_mode == FanMode.STATIC:
-            if speed >= 0 and speed <= 100:
+            if speed >= 0 and speed <= 100 and speed != self.fan_speed:
                 self.fan_speed = speed
-            logger.info(f"Fan speed set to {speed}%.")
-        self.mock_tick()
+                logger.info(f"Fan speed set to {speed}%.")
 
     def serialize(self):
         return {
             "temperature": str(self.temperature),
             "fan_speed": self.fan_speed,
             "power_consumption": str(self.power_consumption),
-            "started_at": self.started_at.timestamp(),
+            "started_at": self.started_at,
             "logs": self.logs,
             "status": self.status.value,
+            "fan_mode": self.fan_mode.value
         }
 
     async def send_state(self, connections: List[WebSocket]):

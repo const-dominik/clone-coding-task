@@ -1,6 +1,17 @@
 import { RobotState } from "../types";
 import Box from "./utils/Box";
 
+const getLogBackground = (log: string) => {
+    if (log.includes("[ERROR]")) {
+        return "bg-red-100";
+    } else if (log.includes("[WARNING]")) {
+        return "bg-yellow-100";
+    } else if (log.includes("[INFO]")) {
+        return "bg-green-100";
+    }
+    return "bg-gray-200";
+};
+
 const Logs = ({ logs }: { logs: RobotState["logs"] }) => {
     return (
         <Box header="Robot logs">
@@ -13,7 +24,9 @@ const Logs = ({ logs }: { logs: RobotState["logs"] }) => {
                     logs.map((log, index) => (
                         <div
                             key={index}
-                            className="bg-white/40 rounded-md px-3 py-2 text-sm font-mono text-gray-800 shadow-sm text-left"
+                            className={`${getLogBackground(
+                                log
+                            )} rounded-md px-3 py-2 text-sm font-mono text-gray-800 shadow-sm text-left`}
                         >
                             {log}
                         </div>

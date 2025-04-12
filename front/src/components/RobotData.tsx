@@ -29,7 +29,7 @@ const InfoPill = ({
     unit,
 }: {
     measure: string;
-    value: number;
+    value: number | string;
     unit: string;
 }) => (
     <Pill pointer={false}>

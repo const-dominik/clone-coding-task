@@ -1,24 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Robot from "./components/Robot";
 import { RobotState } from "./types";
 import ControlPanel from "./components/ControlPanel";
 import RobotData from "./components/RobotData";
 import Logs from "./components/Logs";
-
-const mockRobot: RobotState = {
-    temperature: 35,
-    powerConsumption: 20,
-    status: "running",
-    fanSpeed: 25,
-    uptime: 284400,
-    logs: [
-        `[INFO][${new Date().toLocaleString()}] started`,
-        `[INFO][${new Date().toLocaleString()}] is doing well`,
-        `[INFO][${new Date().toLocaleString()}] feeling a bit under the weather :(`,
-        `[INFO][${new Date().toLocaleString()}] please call me back`,
-    ],
-    fanMode: "proportional",
-};
+import useWebSocket from "react-use-websocket";
+import { parseServerRobot } from "./schemas";
 
 const statusToColor: Record<RobotState["status"], string> = {
     idle: "text-orange-600",
@@ -28,7 +15,43 @@ const statusToColor: Record<RobotState["status"], string> = {
 };
 
 const App = () => {
-    const [robotState, setRobotState] = useState(mockRobot);
+    const [robotState, setRobotState] = useState<null | RobotState>(null);
+
+    const WS_URL = "ws://localhost:5487/ws";
+    const { sendJsonMessage, lastJsonMessage } = useWebSocket(WS_URL, {
+        share: false,
+        shouldReconnect: () => true,
+    });
+
+    useEffect(() => {
+        try {
+            setRobotState(parseServerRobot(lastJsonMessage));
+        } catch (e) {
+            console.log(e);
+        }
+    }, [lastJsonMessage]);
+
+    if (!robotState) {
+        return (
+            <div className="flex h-screen w-screen flex-col items-center justify-center bg-[#D4A373] text-white">
+                <div className="flex items-center gap-4 text-xl font-medium">
+                    <div className="w-1/2">
+                        <Robot status="offline" />
+                    </div>
+                    <div>
+                        <span className="text-gray-700">
+                            I'm connecting with my inner self. Give me a second,
+                            please.
+                        </span>
+                        <p className="mt-2 text-sm text-gray-500">
+                            If this takes more than a second, my inner self is
+                            probably dead and needs to be restarted. :(
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-screen w-screen">
@@ -46,7 +69,10 @@ const App = () => {
                 <Robot status={robotState.status} />
             </div>
             <div className="w-1/3 flex flex-col justify-around items-center bg-[#FAEDCD]">
-                <ControlPanel state={robotState} setState={setRobotState} />
+                <ControlPanel
+                    state={robotState}
+                    sendWsMessage={sendJsonMessage}
+                />
                 <RobotData state={robotState} />
             </div>
             <div className="w-1/3 flex justify-center items-center bg-[#FAEDCD]">

@@ -1,6 +1,9 @@
 import argparse
 import uvicorn
 import asyncio
+import os
+
+
 from models import Robot, ConnectionManager
 from fastapi import FastAPI, WebSocket
 from fastapi.websockets import WebSocketDisconnect
@@ -41,7 +44,10 @@ def create_app(args) -> FastAPI:
 async def periodic_state_update(rate: int):
     while True:
         robot.mock_tick()
-        await robot.send_state(manager.get_connections())
+        try:
+            await robot.send_state(manager.get_connections())
+        except WebSocketDisconnect:
+            pass
         await asyncio.sleep(1 / rate)
 
 if __name__ == "__main__":
